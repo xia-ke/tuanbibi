@@ -127,13 +127,13 @@ def _verify_request(partner_id: str | None, timestamp: str | None,
         raise HTTPException(503, "未配置合作方上报通道")
     if partner_id not in keys or not timestamp or not signature:
         raise HTTPException(401, "签名认证失败")
-    try:
-        sent_at = int(timestamp)
-    except ValueError:
+    if not timestamp.isascii() or not timestamp.isdecimal() or len(timestamp) > 12:
         raise HTTPException(401, "签名认证失败")
-    if len(timestamp) > 14 or abs(datetime.now(timezone.utc).timestamp() - sent_at) > 300:
+    sent_at = int(timestamp)
+    if abs(datetime.now(timezone.utc).timestamp() - sent_at) > 300:
         raise HTTPException(401, "签名已过期")
-    if not signature.startswith("sha256=") or len(signature) != 71:
+    if (not signature.startswith("sha256=") or len(signature) != 71 or
+        any(c not in "0123456789abcdef" for c in signature[7:])):
         raise HTTPException(401, "签名认证失败")
     base = timestamp.encode("ascii") + b"." + body
     expect = "sha256=" + hmac.new(keys[partner_id].encode("utf-8"), base, hashlib.sha256).hexdigest()

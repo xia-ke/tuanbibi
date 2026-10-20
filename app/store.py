@@ -10,7 +10,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS stores(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL, city TEXT NOT NULL,
-  district TEXT NOT NULL, address TEXT NOT NULL
+  district TEXT NOT NULL, address TEXT NOT NULL,
+  is_demo INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS products(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,6 +104,11 @@ def init_db(db_path: str, seed_demo: bool = True) -> None:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     with connect(db_path) as db:
         db.executescript(SCHEMA)
+        # Upgrade a previous 0.1 database in place without touching real records.
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(stores)")}
+        if "is_demo" not in columns:
+            db.execute("ALTER TABLE stores ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0")
+            db.execute("UPDATE stores SET is_demo=1 WHERE name LIKE '示例 · %'")
         if not seed_demo:
             return
         already_seeded = db.execute("SELECT 1 FROM stores LIMIT 1").fetchone()
@@ -110,7 +116,7 @@ def init_db(db_path: str, seed_demo: bool = True) -> None:
             return
         for name, city, district, address, products in DEMO:
             cursor = db.execute(
-                "INSERT INTO stores(name, city, district, address) VALUES (?,?,?,?)",
+                "INSERT INTO stores(name, city, district, address, is_demo) VALUES (?,?,?,?,1)",
                 (name, city, district, address),
             )
             store_id = cursor.lastrowid

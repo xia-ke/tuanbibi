@@ -67,6 +67,9 @@ def signed_post(client, payload, secret=SECRET, *, tamper=False, timestamp=None)
 def configured(monkeypatch):
     monkeypatch.setenv("TBB_ADMIN_TOKEN", "admin-secret")
     monkeypatch.setenv("TBB_PARTNER_KEYS_JSON", json.dumps({"merchant_alpha": SECRET}))
+    monkeypatch.setenv("TBB_PARTNER_SCOPES_JSON", json.dumps({
+        "merchant_alpha": {"store_ids": [1], "platforms": ["meituan", "douyin", "kuaishou", "dianping"]}
+    }))
 
 
 def test_unconfigured_partner_ingestion_fails_closed(tmp_path, monkeypatch):
@@ -137,7 +140,8 @@ def test_identity_price_url_and_time_must_be_valid(tmp_path, monkeypatch):
         ]
         for changes in invalid:
             response = signed_post(client, {**base, **changes})
-            assert response.status_code == 422, (changes, response.text)
+            expect = 403 if "store_id" in changes else 422
+            assert response.status_code == expect, (changes, response.text)
         # All failed validation, and no partial rows may have been inserted.
         with store.connect(str(tmp_path / "mismatch.db")) as db:
             assert db.execute("SELECT COUNT(*) FROM partner_quotes").fetchone()[0] == 0
@@ -169,3 +173,29 @@ def test_existing_demo_db_keeps_working_and_feed_wins(tmp_path, monkeypatch):
         comp = client.get("/api/stores/1/comparison").json()
         assert comp["groups"][0]["quotes"]
         assert not comp["groups"][0]["real_comparison_ready"]
+
+
+
+def test_scopes_reject_unapproved_platform(tmp_path, monkeypatch):
+    configured(monkeypatch)
+    monkeypatch.setenv("TBB_PARTNER_SCOPES_JSON", json.dumps({
+        "merchant_alpha": {"store_ids": [1], "platforms": ["meituan"]}
+    }))
+    with TestClient(create_app(str(tmp_path / "scoped.db"), seed_demo=False)) as client:
+        sid, pid = setup_catalog(client)
+        unauthorized = valid_payload(sid, pid, platform="douyin")
+        assert signed_post(client, unauthorized).status_code == 403
+        assert signed_post(client, valid_payload(sid, pid)).status_code == 201
+
+
+def test_reject_signed_quote_against_demo_store(tmp_path, monkeypatch):
+    configured(monkeypatch)
+    with TestClient(create_app(str(tmp_path / "demo-protected.db"), seed_demo=True)) as client:
+        body = valid_payload(1, 1)
+        body.update({
+            "product_name": "招牌拿铁 · 中杯 1 杯",
+            "details": "中杯拿铁×1，不含配送",
+            "usage_terms": "全时段到店自取；不与其他活动叠加",
+            "store_address": "上海市徐汇区 · 演示地址",
+        })
+        assert signed_post(client, body).status_code == 422

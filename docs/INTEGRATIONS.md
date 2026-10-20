@@ -28,6 +28,8 @@
 
 ```bash
 export TBB_PARTNER_KEYS_JSON='{"merchant_alpha":"replace-with-a-random-secret-of-at-least-32-bytes"}'
+# 显式准入：ID 必须是管理员创建的真实门店，不能是演示门店
+export TBB_PARTNER_SCOPES_JSON='{"merchant_alpha":{"store_ids":[123],"platforms":["meituan","douyin"]}}'
 ```
 
 启动服务后，合作方需要在同一个 HTTP 请求中提交：
@@ -40,20 +42,20 @@ X-Timestamp: 1792512000
 X-Signature: sha256=<HMAC_SHA256_HEX>
 ```
 
-签名内容是原始字节：`ASCII(UnixTimestamp) + b"." + raw_json_bytes`。签名密钥来自 `TBB_PARTNER_KEYS_JSON`。时间戳最多偏移 300 秒，JSON 不得超过 32KiB，事件 ID 对合作方全局唯一。传入业务报价时间需为带时区 ISO 8601 时间，记录时间必须在最近 10 分钟内，过期时间必须是将来且距离记录时间最多 24 小时。
+签名内容是原始字节：`ASCII(UnixTimestamp) + b"." + raw_json_bytes`。签名密钥来自 `TBB_PARTNER_KEYS_JSON`，而可提交的平台和门店由 `TBB_PARTNER_SCOPES_JSON` 的显式准入列表限制，配置缺失将拒绝写入。时间戳最多偏移 300 秒，JSON 不得超过 32KiB，事件 ID 对合作方全局唯一。传入业务报价时间需为带时区 ISO 8601 时间，记录时间必须在最近 10 分钟内，过期时间必须是将来且距离记录时间最多 24 小时。
 
 请求示意（字段值为虚构演示信息）：
 
 ```json
 {
   "event_id": "example_unique_0001",
-  "store_id": 1,
-  "product_id": 1,
+  "store_id": 123,
+  "product_id": 456,
   "platform": "meituan",
-  "product_name": "招牌拿铁 · 中杯 1 杯",
-  "details": "中杯拿铁×1，不含配送",
+  "product_name": "样例饮品套餐",
+  "details": "中杯饮品×1，不含配送",
   "usage_terms": "全时段到店自取；不与其他活动叠加",
-  "store_address": "上海市徐汇区 · 演示地址",
+  "store_address": "上海市徐汇区样例路123号",
   "list_price_cents": 1990,
   "discount_cents": 300,
   "fee_cents": 0,
@@ -66,11 +68,11 @@ X-Signature: sha256=<HMAC_SHA256_HEX>
 }
 ```
 
-此 JSON 是**结构示意**，固定的时间戳会很快失效，必须使用当前时间生成真实测试请求。更多端到端示例见 `tests/test_partner_feed.py`。
+此 JSON 是**结构示意**，所示门店/套餐 ID 不保证存在，且签名上报禁止写入演示门店；固定的时间戳会很快失效，必须使用当前时间生成真实测试请求。更多端到端示例见 `tests/test_partner_feed.py`。
 
 ### 严格匹配
 
-现阶段采取 **fail-closed 精确匹配**：合作方传入门店数据库 ID、套餐 ID、地址、套餐名称、内容和使用条件，经 Unicode NFKC 和空白规范化后全部一致才允许入库。即使商户名称相似，也不能强行把不同地点、人数、条款的套餐合并。未来接入商家 POI 官方标识后，将关联交由可审核的映射表处理。
+现阶段采取 **fail-closed 精确匹配**：合作方提交前须获得对应门店与平台的白名单授权，且目标不能是演示门店。传入门店数据库 ID、套餐 ID、地址、套餐名称、内容和使用条件，经 Unicode NFKC 和空白规范化后全部一致才允许入库。即使商户名称相似，也不能强行把不同地点、人数、条款的套餐合并。未来接入商家 POI 官方标识后，将关联交由可审核的映射表处理。
 
 ### 生产环境边界
 
