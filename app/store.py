@@ -10,7 +10,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS stores(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL, city TEXT NOT NULL,
-  district TEXT NOT NULL, address TEXT NOT NULL
+  district TEXT NOT NULL, address TEXT NOT NULL,
+  is_demo INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS products(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +34,27 @@ CREATE TABLE IF NOT EXISTS quotes(
 CREATE INDEX IF NOT EXISTS idx_stores_city ON stores(city);
 CREATE INDEX IF NOT EXISTS idx_products_store ON products(store_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_product ON quotes(product_id);
+
+CREATE TABLE IF NOT EXISTS partner_quotes(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  partner_id TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  platform TEXT NOT NULL CHECK(platform IN ('meituan','douyin','kuaishou','dianping')),
+  list_price_cents INTEGER NOT NULL CHECK(list_price_cents >= 0),
+  discount_cents INTEGER NOT NULL CHECK(discount_cents BETWEEN 0 AND list_price_cents),
+  fee_cents INTEGER NOT NULL CHECK(fee_cents >= 0),
+  availability TEXT NOT NULL CHECK(availability IN ('available','sold_out','offline','unknown')),
+  eligibility TEXT NOT NULL CHECK(eligibility IN ('public','coupon_required','member_only','unknown')),
+  source_url TEXT NOT NULL,
+  note TEXT NOT NULL,
+  quoted_at TEXT NOT NULL,
+  valid_until TEXT NOT NULL,
+  received_at TEXT NOT NULL,
+  UNIQUE(partner_id,event_id)
+);
+CREATE INDEX IF NOT EXISTS idx_partner_quotes_product ON partner_quotes(product_id,platform);
+
 """
 
 # Illustrative and fictitious stores, products, and prices; never real market quotations.
@@ -82,6 +104,11 @@ def init_db(db_path: str, seed_demo: bool = True) -> None:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     with connect(db_path) as db:
         db.executescript(SCHEMA)
+        # Upgrade a previous 0.1 database in place without touching real records.
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(stores)")}
+        if "is_demo" not in columns:
+            db.execute("ALTER TABLE stores ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0")
+            db.execute("UPDATE stores SET is_demo=1 WHERE name LIKE '示例 · %'")
         if not seed_demo:
             return
         already_seeded = db.execute("SELECT 1 FROM stores LIMIT 1").fetchone()
@@ -89,7 +116,7 @@ def init_db(db_path: str, seed_demo: bool = True) -> None:
             return
         for name, city, district, address, products in DEMO:
             cursor = db.execute(
-                "INSERT INTO stores(name, city, district, address) VALUES (?,?,?,?)",
+                "INSERT INTO stores(name, city, district, address, is_demo) VALUES (?,?,?,?,1)",
                 (name, city, district, address),
             )
             store_id = cursor.lastrowid
@@ -137,8 +164,10 @@ def store_and_products(db: sqlite3.Connection, store_id: int):
 
 
 def latest_quotes(db: sqlite3.Connection, product_id: int) -> list[dict]:
-    # Per-platform preference: newest non-demo submission replaces illustrative data.
-    rows = db.execute(
+    """Most recently reported source per platform. Never fallback from expired feed
+    to a demo price, which would silently mask a data outage.
+    """
+    legacy = db.execute(
         """SELECT * FROM (
              SELECT q.*, ROW_NUMBER() OVER(
                 PARTITION BY q.platform
@@ -149,4 +178,25 @@ def latest_quotes(db: sqlite3.Connection, product_id: int) -> list[dict]:
            ) WHERE rank_number=1 ORDER BY platform""",
         (product_id,),
     )
-    return [{k: value for k, value in dict(r).items() if k != "rank_number"} for r in rows]
+    selected = {}
+    for row in legacy:
+        entry = dict(row)
+        entry.pop("rank_number", None)
+        selected[entry["platform"]] = entry
+
+    feed = db.execute(
+        """SELECT * FROM (
+             SELECT p.*, ROW_NUMBER() OVER (
+                 PARTITION BY p.platform ORDER BY p.quoted_at DESC, p.id DESC
+             ) AS rank_number
+             FROM partner_quotes p WHERE p.product_id=?
+           ) WHERE rank_number=1 ORDER BY platform""",
+        (product_id,),
+    )
+    for row in feed:
+        entry = dict(row)
+        entry.pop("rank_number", None)
+        entry["source_type"] = "partner_feed"
+        entry["captured_at"] = entry["quoted_at"]
+        selected[entry["platform"]] = entry
+    return [selected[name] for name in sorted(selected)]

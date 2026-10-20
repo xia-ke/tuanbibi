@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 import hmac
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -11,15 +10,11 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.pricing import comparison_for, payable_cents, utc_now
+from app.integrations import PLATFORM_DOMAINS, attach_feed_routes, platform_url_is_valid
 from app import store as data
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SUPPORTED = {
-    "meituan": ("meituan.com",),
-    "dianping": ("dianping.com",),
-    "douyin": ("douyin.com", "iesdouyin.com"),
-    "kuaishou": ("kuaishou.com", "gifshow.com"),
-}
+SUPPORTED = PLATFORM_DOMAINS
 
 
 class StoreInput(BaseModel):
@@ -56,12 +51,7 @@ class QuoteInput(BaseModel):
     def validate_quote(self):
         payable_cents(self.list_price_cents, self.discount_cents, self.fee_cents)
         if self.source_url:
-            parsed = urlparse(self.source_url)
-            hostname = (parsed.hostname or "").lower()
-            allowed = SUPPORTED[self.platform]
-            if (parsed.scheme != "https" or parsed.username or parsed.password
-                or parsed.port not in (None, 443)
-                or not any(hostname == d or hostname.endswith("." + d) for d in allowed)):
+            if not platform_url_is_valid(self.platform, self.source_url):
                 raise ValueError("来源链接必须是该平台的 HTTPS 官方域名")
         return self
 
@@ -75,7 +65,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
         data.init_db(path, seed_demo=demo)
         yield
 
-    app = FastAPI(title="团比比 API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="团比比 API", version="0.2.0", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "web")), name="static")
 
     def require_admin(x_admin_token: str | None = Header(default=None)):
@@ -91,7 +81,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.1.0"}
+        return {"ok": True, "version": "0.2.0"}
 
     @app.get("/api/meta")
     def meta():
@@ -118,7 +108,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
             return {
                 "store": store,
                 "groups": [comparison_for(p, data.latest_quotes(db, p["id"])) for p in products],
-                "notice": "仅相同门店和相同套餐的报价可比较；示例价格不参与真实省钱结论。",
+                "notice": "仅同店同款可比；真实比较目前仅基于有效签名合作方报价，非平台官方实时价。",
             }
 
     @app.post("/api/admin/stores", status_code=201, dependencies=[Depends(require_admin)])
@@ -162,6 +152,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
             db.commit()
             return {"id": cursor.lastrowid, "source_type": "manual"}
 
+    attach_feed_routes(app, path)
     return app
 
 
