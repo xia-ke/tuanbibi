@@ -22,6 +22,38 @@
 
 完整接入约束与数据使用边界：[docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)。
 
+## 美团商品获取实验
+
+本阶段实现 **已知公开商品链接 → 受限提取 → 独立保存页面标价**；并研究美团联盟官方商品查询 API。两种数据不能混为官方实时结算价。
+
+### 公开页面抓取（管理员专用）
+
+先设置 `TBB_ADMIN_TOKEN`，启动服务后执行（**替换为真实商品详情页 URL**）：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/admin/meituan/inspect \
+  -H 'Content-Type: application/json' \
+  -H "X-Admin-Token: $TBB_ADMIN_TOKEN" \
+  -d '{"url":"https://i.meituan.com/deal/你的商品路径"}'
+```
+
+- `POST /api/admin/meituan/inspect`：返回可提取的商品名称、品牌、说明、**页面标示价格**、证据、采集时间；不保存。
+- `POST /api/admin/meituan/collect`：提交同样的 URL；只有页面存在明确的结构化商品价格时才保存到 `meituan_public_observations`。未取到价格返回 422。
+- `GET /api/admin/meituan/observations`：查看历史采集快照。**采集数据不参与实时最低价排名**。
+- 页面检测默认检查 robots.txt，不自动跟随重定向，不使用登录 cookie，不绕过访问限制、验证码或风控；仅允许有限的美团 HTTPS 域名，限制响应大小和超时。
+- 当前只解析公开 HTML 内的 Schema.org Product JSON-LD 和明确的 Product 元数据，不猜测隐藏页面数据，碰到纯 JS 或登录页会明确返回不可提取。
+
+### 官方美团联盟商品查询（接口字段已适配，尚未认证对接）
+
+官方文档：[美团联盟商品查询接口](https://page.meituan.net/html/1701831807616_1db0df/index.html)，请求地址 `https://media.meituan.com/cps_open/common/api/v1/query_coupon`。官方支持到店餐饮商品查询，但需要 AppKey、签名及相应权限，且只涵盖开放的商品范围。
+
+- `GET /api/admin/meituan/alliance/query?keyword=火锅`：生成待签名 JSON 请求体；**不发送请求**。
+- `POST /api/admin/meituan/alliance/normalize`：把提供的官方 schema 格式响应转成统一商品字段；**不校验该 JSON 真正来自美团**。
+- 商品显示价按官方文档的**元**转成内部整数**分**；官方响应中的门店数量不是可用于匹配同店的 POI ID。
+- 美团联盟关键词查询不能同时设置 `platform`/`bizLine`；需按返回字段再次确认是否属于到店餐饮。
+
+**验收状态：** 目前通过模拟 HTTP/官方 JSON 格式回归测试，但还没有取得真实美团商品详情页成功采集的验证样本，也没有完成美团联盟签名鉴权接入。不得用测试样例冒充真实价格。
+
 ## 本地启动
 
 要求 Python 3.11+（推荐 3.12）。
