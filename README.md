@@ -26,6 +26,16 @@
 
 本阶段实现 **已知公开商品链接 → 受限提取 → 独立保存页面标价**；并研究美团联盟官方商品查询 API。两种数据不能混为官方实时结算价。
 
+### 最快的本地测试方法
+
+不需要启动服务或配置管理员令牌，直接执行：
+
+```bash
+python -m scripts.meituan_probe 'https://i.meituan.com/deal/替换成真实商品路径'
+```
+
+正常时输出 JSON 中的 `product_name`、`display_price_cents`、`price_evidence`、`source_url`；无法访问时退出码为 2，并输出 `reason`（例如 `robots_disallow`、`redirect_blocked`、`no_product_metadata`、`access_restricted`）。所提取价格仍是**网页标价**，不是支付成功金额。
+
 ### 公开页面抓取（管理员专用）
 
 先设置 `TBB_ADMIN_TOKEN`，启动服务后执行（**替换为真实商品详情页 URL**）：
