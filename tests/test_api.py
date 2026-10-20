@@ -61,3 +61,13 @@ def test_demo_seed_is_idempotent(tmp_path):
     for _ in range(2):
         with TestClient(create_app(db, seed_demo=True)) as client:
             assert len(client.get("/api/stores").json()["stores"]) == 3
+
+
+def test_homepage_renders_interactive_search(tmp_path):
+    with TestClient(create_app(str(tmp_path / "home.db"), seed_demo=True)) as client:
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "团比比" in response.text
+        assert "searchForm" in response.text
+        assert "citySelect" in response.text
+        assert "api/meta" in response.text
