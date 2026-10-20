@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#242d45">
+<meta name="description" content="团比比：同一家店，多平台比。中国本地生活团购券比价实验项目。">
+<title>团比比 · 同店团购比价</title>
+<style>
+:root{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;color:#29354a;background:#f7f8fb;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}
+.wrap{max-width:1180px;margin:auto;padding:0 24px}
+header{background:white;border-bottom:1px solid #edf0f3}
+nav{height:76px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-weight:850;color:#202e46;font-size:23px;letter-spacing:-.6px}
+.brand-icon{background:linear-gradient(135deg,#fe7550,#f35b91);color:#fff;border-radius:13px;width:42px;height:42px;display:grid;place-items:center;box-shadow:0 4px 14px #ff785a55}
+.brand small{display:block;font-size:9px;letter-spacing:3.5px;color:#a9afbb;margin-top:-3px}
+nav a.source{border:1px solid #e8ebf0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700}
+nav a.source:hover{color:#f46852;border-color:#ffb6a4}
+.hero{color:#fff;background:radial-gradient(ellipse at 75% 100%,#ae516588,transparent 54%),linear-gradient(110deg,#232d49,#343454 70%,#55415a);overflow:hidden}
+.hero-body{min-height:353px;position:relative;display:flex;align-items:center}
+.hero-copy{padding:37px 0 60px;position:relative;z-index:2}
+.eyebrow{display:inline-block;color:#ffd7cb;border-radius:100px;border:1px solid #ffffff23;background:#ffffff10;padding:8px 13px;font-size:12px;font-weight:650;letter-spacing:1.4px}
+h1{font-size:clamp(40px,5vw,62px);line-height:1.12;letter-spacing:-1.9px;margin:20px 0 16px}
+h1 span{background:linear-gradient(90deg,#ffc78f,#f88eae);color:transparent;background-clip:text}
+.hero p{font-size:14px;line-height:1.95;color:#d2d6e0}
+.hero-tags{display:flex;gap:9px;margin-top:22px;flex-wrap:wrap}
+.hero-tags span{font-size:11px;padding:7px 10px;background:#ffffff10;border:1px solid #ffffff16;color:#fbd2c4;border-radius:7px}
+.graphics{position:absolute;right:80px;top:65px;width:310px;height:260px;transform:rotate(8deg)}
+.graphic-ticket{position:absolute;border-radius:20px;width:190px;height:205px;box-shadow:0 16px 48px #0003;padding:22px;display:flex;flex-direction:column}
+.graphic-ticket strong{font-size:32px;margin-top:45px}.graphic-ticket small{font-size:12px;font-weight:800}
+.graphic-ticket.back{background:#f7d9e5;color:#a45d70;left:108px;top:0;transform:rotate(9deg)}
+.graphic-ticket.front{background:#fffaf3;color:#443e45;left:10px;top:35px;transform:rotate(-17deg)}
+.graphic-ticket.front strong{color:#f16e51}.stamp{position:absolute;left:-45px;top:20px;border-radius:100%;width:85px;height:85px;display:grid;place-items:center;font-weight:800;background:#fd7557;box-shadow:0 12px 25px #0002;transform:rotate(-19deg)}
+.search-section{position:relative;z-index:3;margin-top:-34px}
+.search-box{display:flex;align-items:stretch;border-radius:17px;background:white;box-shadow:0 13px 37px #23324b21;padding:9px;min-height:83px;border:1px solid #eee}
+.form-cell{display:flex;flex-direction:column;gap:5px;justify-content:center;padding:7px 18px}.form-cell.city{width:170px;flex:0 0 170px}.form-cell.query{flex:1;min-width:0}
+.form-cell label{font-size:11px;font-weight:800;color:#24314a}.form-cell input,.form-cell select{border:0;background:none;outline:0;font-size:14px;color:#5c6a7e;min-width:0;width:100%}.form-cell input::placeholder{color:#a3acbb}
+.search-divider{width:1px;height:35px;background:#e6e9ee;align-self:center}
+.search-button{min-width:170px;background:linear-gradient(100deg,#ff7350,#f45c86);color:white;border:0;border-radius:11px;font-weight:800;font-size:14px}
+.search-button:hover{filter:brightness(.97)}
+.quick-row{display:flex;gap:9px;align-items:center;padding:17px 3px 22px;flex-wrap:wrap}
+.quick-row span{font-size:12px;color:#a3abb9;margin-right:3px}
+.quick-row button{background:#fff;border:1px solid #e7eaf0;border-radius:18px;padding:7px 13px;color:#647084;font-size:12px}
+.quick-row button:hover{border-color:#f6a68d;color:#eb6552;background:#fff7f3}
+.notice{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff9ed;border:1px solid #f3e1c7;border-radius:12px;color:#826135}
+.notice .icon{font-weight:900;color:#ae8651;background:#fae9c9;border-radius:100%;width:24px;height:24px;display:grid;place-items:center;flex:0 0 24px}
+.notice strong{font-size:13px}.notice p{font-size:12px;color:#9a7b50;margin:4px 0 0}.notice code{margin-left:auto;font-size:11px;color:#aa7f41;font-weight:800}
+.section-title{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:40px 0 23px}
+.section-title small{letter-spacing:3px;color:#f47350;font-size:10px;font-weight:900}
+.section-title h2{font-size:27px;letter-spacing:-.6px;margin:7px 0;color:#25324a}.section-title h2 em{font-style:normal;color:#fe7655}
+.section-title p{margin:0;color:#9aa4b4;font-size:13px}.section-right{color:#98a1b0;font-size:12px}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+.panel{background:white;border-radius:16px;border:1px solid #e7ebf1;box-shadow:0 8px 25px #1c2b4507;overflow:hidden}
+.sidebar-title{padding:23px 21px 13px;display:flex;align-items:center;justify-content:space-between}
+.sidebar-title h3{margin:0;font-size:17px}.sidebar-title h3 span{font-size:11px;color:#99a3b4;background:#f1f3f6;border-radius:10px;padding:3px 7px}
+.sidebar-title p{margin:7px 0 0;font-size:12px;color:#a3aebf}.sidebar-title .pin{background:#fff2ec;border-radius:9px;color:#f47350;font-size:19px;padding:7px 10px}
+#storeList{padding:5px 10px 13px}
+.store-row{width:100%;border:1px solid transparent;text-align:left;display:flex;align-items:center;padding:13px 10px;border-radius:12px;gap:11px;background:transparent}
+.store-row:hover{background:#faf9fa}.store-row.selected{background:#fff6f2;border-color:#ffdfd0}
+.store-icon{border-radius:11px;background:#f2f1fb;font-size:23px;display:grid;place-items:center;width:47px;height:47px;flex:0 0 47px}
+.selected .store-icon{background:#ffe7dd}
+.store-txt{flex:1;min-width:0}.store-txt strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#283651}
+.store-txt small{display:block;font-size:11px;color:#9ba4b2;margin-top:6px}.row-chevron{font-size:19px;color:#aab3c1}.selected .row-chevron{color:#f37456}
+#details{min-height:340px}
+.store-header{padding:24px 26px 21px;border-bottom:1px solid #e9edf1;display:flex;justify-content:space-between;gap:14px}
+.store-header small{font-size:11px;color:#f36f50;font-weight:750}.store-header h3{margin:8px 0;font-size:21px;color:#26344b}.store-header p{margin:0;color:#9ba6b5;font-size:12px}
+.store-header .outline{font-size:11px;padding:8px 11px;color:#7d8a9c;border:1px solid #e8ecf1;border-radius:8px;height:fit-content;white-space:nowrap}
+.product{padding:22px 26px}.product+.product{border-top:1px solid #ebedf2}
+.product-heading{display:flex;justify-content:space-between;gap:12px}.product-heading h4{margin:0;font-size:16px;color:#243249}.product-heading small{font-size:11px;color:#bac0ca;white-space:nowrap}
+.details-line{font-size:12px;color:#7f8b9d;margin:9px 0 4px}.terms-line{font-size:12px;color:#b07d63;margin:0 0 15px}
+.quote-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
+.quote{padding:13px;border:1px solid #e8ebf0;border-radius:12px;min-width:0}.quote.best{background:#fffaf7;border-color:#ffcdbd}
+.quote-top{display:flex;justify-content:space-between;align-items:center;gap:4px}.quote-top strong{font-size:13px;color:#25344a}
+.quote-tag{font-size:10px;background:#f1f3f7;color:#8691a0;padding:4px 7px;border-radius:6px;white-space:nowrap}
+.quote-tag.manual{color:#7355a9;background:#f1eaff}.quote-tag.api{color:#158875;background:#eaf8f2}
+.price{font-size:26px;font-weight:850;color:#25324b;margin:13px 0 7px}.price small{font-size:13px}.best .price{color:#f26c4d}
+.breakdown{font-size:11px;color:#97a1b0;line-height:1.65;min-height:34px}
+.quote-note{font-size:11px;color:#9f836e;margin-top:7px}.quote-time{font-size:10px;color:#b0b9c7;margin-top:12px}
+.quote a{color:#eb7056;display:block;margin-top:12px;font-size:11px;font-weight:800}.quote .no-url{color:#b4becb;margin-top:12px;font-size:11px}
+.summary{background:#f7f9fb;padding:11px 13px;border-radius:8px;color:#7d8999;font-size:11px;line-height:1.6;margin-top:12px}.summary b{color:#168d74}
+.empty{display:flex;min-height:332px;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.empty-icon{background:#fff0ea;color:#f67451;font-size:32px;display:grid;place-items:center;width:75px;height:75px;border-radius:22px;transform:rotate(-7deg)}.empty h3{font-size:19px;margin:23px 0 8px}.empty p{font-size:13px;line-height:1.7;color:#9faab9;margin:0}
+.placeholder{padding:24px 12px;text-align:center;font-size:13px;color:#95a0af}
+.explain{color:#a1acba;font-size:12px;margin:18px 0 60px;line-height:1.8}
+footer{background:#fff;border-top:1px solid #eaedf1;font-size:12px;color:#9ca7b5}footer .wrap{min-height:83px;display:flex;justify-content:space-between;align-items:center;gap:12px}footer strong{color:#25334b}footer a{color:#ee7254}
+:focus-visible{outline:3px solid #fd9f83;outline-offset:3px}
+@media(max-width:850px){.graphics{right:-60px;opacity:.7}.layout{grid-template-columns:245px minmax(0,1fr)}.quote-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.wrap{padding-left:16px;padding-right:16px}nav{height:67px}.hero-body{min-height:323px}.hero-copy{padding-bottom:69px}.hero h1{font-size:43px}.hero p{font-size:13px}.graphics{display:none}
+.search-box{flex-wrap:wrap}.form-cell.city{width:35%;flex:0 0 35%;padding:7px 9px}.form-cell.query{padding:7px 10px}.search-button{width:100%;margin-top:9px;padding:13px}
+.section-title{margin-top:30px}.section-title h2{font-size:23px}.section-right{display:none}.layout{grid-template-columns:1fr;gap:12px}
+#storeList{display:flex;overflow-x:auto;padding-bottom:12px}.store-row{flex:0 0 220px}.store-header,.product{padding:20px 17px}.store-header .outline{display:none}.notice code{display:none}
+footer .wrap{flex-direction:column;align-items:start;justify-content:center;padding-top:17px;padding-bottom:17px;gap:8px}}
+@media(max-width:365px){.quote-grid{grid-template-columns:1fr}.hero h1{font-size:39px}}
+</style>
+</head>
+<body>
+<header><nav class="wrap"><a class="brand" href="/" aria-label="团比比首页"><span class="brand-icon">比</span><span>团比比<small>TUANBIBI</small></span></a><a class="source" href="https://github.com/xia-ke/tuanbibi" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav></header>
+<main>
+<section class="hero"><div class="wrap hero-body"><div class="hero-copy"><span class="eyebrow">✦ 本地生活 · 团购比价实验室</span><h1>同一家店，<br><span>多平台比。</span></h1><p>团购不靠猜，先把套餐和价格摆在一起。<br>比的是同款，更是实际要付多少钱。</p><div class="hero-tags"><span>✓ 同店匹配</span><span>✓ 套餐逐项比较</span><span>✓ 来源清晰可追溯</span></div></div><div class="graphics" aria-hidden="true"><div class="graphic-ticket back"><small>本地生活券</small><strong>¥ 29.90</strong><span>示例价格</span></div><div class="graphic-ticket front"><small>团购好价</small><strong>¥ 16.80</strong><span>示例价格</span></div><div class="stamp">比一比 ↗</div></div></div></section>
+<section class="wrap search-section" aria-label="门店搜索"><form id="searchForm" class="search-box"><div class="form-cell city"><label for="citySelect">所在城市</label><select id="citySelect"><option value="">全部城市</option></select></div><div class="search-divider"></div><div class="form-cell query"><label for="keyword">寻找门店</label><input type="search" maxlength="80" id="keyword" placeholder="搜索咖啡、小馆、茶屋…" autocomplete="off"></div><button class="search-button" type="submit">⌕　搜索优惠</button></form><div class="quick-row"><span>快速探索</span><button data-search="咖啡" type="button">☕ 咖啡</button><button data-search="小馆" type="button">🥢 正餐</button><button data-search="茶屋" type="button">🍰 下午茶</button><button data-search="" type="button">全部门店</button></div></section>
+<div class="wrap"><div class="notice" id="notice"><span class="icon">i</span><div><strong>目前是产品演示版</strong><p>门店与价格均为虚构的模拟数据，不可用于实际购买决策。真实平台 API 尚未接入。</p></div><code>DEMO</code></div></div>
+<section class="wrap"><div class="section-title"><div><small>COMPARE SMARTER</small><h2>发现值得比的好价<em>.</em></h2><p>选择一家店，看看各平台同款套餐的报价。</p></div><span class="section-right">价格透明，条件也要比清楚</span></div>
+<div class="layout"><aside class="panel"><div class="sidebar-title"><div><h3>门店列表 <span id="storeCount">—</span></h3><p id="cityLabel">全部城市</p></div><span class="pin">⌖</span></div><div id="storeList" aria-live="polite"><div class="placeholder">门店载入中…</div></div></aside><div class="panel" id="details" aria-live="polite"><div class="empty"><span class="empty-icon">↗</span><h3>比价从一家店开始</h3><p>从左侧选择门店，查看同款套餐报价。</p></div></div></div>
+<p class="explain">◎ 同款判断依赖相同门店、套餐内容和使用条件。不同套餐不会被硬凑成“最低价”。</p>
+</section></main>
+<footer><div class="wrap"><span><strong>团比比</strong> · 同一家店，多平台比。</span><span>Open source · MVP 0.1.0 · <a href="https://github.com/xia-ke/tuanbibi" target="_blank" rel="noopener noreferrer">项目源码 ↗</a></span></div></footer>
+<script>
+(function(){
+"use strict";
+var platforms={meituan:"美团",dianping:"大众点评",douyin:"抖音",kuaishou:"快手"};
+var domains={meituan:["meituan.com"],dianping:["dianping.com"],douyin:["douyin.com","iesdouyin.com"],kuaishou:["kuaishou.com","gifshow.com"]};
+var state={city:"",q:"",stores:[],selected:null,requestId:0};
+function $(id){return document.getElementById(id)}
+function el(tag,css,text){var x=document.createElement(tag);if(css)x.className=css;if(text!==undefined)x.textContent=String(text);return x}
+function wipe(x){x.replaceChildren()}
+function price(fen){return (fen/100).toFixed(2)}
+function get(url){return fetch(url,{headers:{Accept:"application/json"}}).then(function(r){if(!r.ok)throw Error("请求失败: "+r.status);return r.json()})}
+function safeLink(url,platform){
+  if(!url||!domains[platform])return null;
+  try{var a=new URL(url),h=a.hostname.toLowerCase();
+    if(a.protocol!=="https:"||a.username||a.password||(a.port&&a.port!=="443"))return null;
+    return domains[platform].some(function(d){return h===d||h.endsWith("."+d)})?a.href:null;
+  }catch(e){return null}
+}
+function empty(title,message){
+  var target=$("details");wipe(target);
+  var d=el("div","empty");d.appendChild(el("span","empty-icon","↗"));d.appendChild(el("h3","",title));d.appendChild(el("p","",message));target.appendChild(d);
+}
+function shopIcon(name){return name.includes("咖啡")?"☕":name.includes("茶")?"🍵":"🥢"}
+function paintStores(){
+  var list=$("storeList");wipe(list);$("storeCount").textContent=state.stores.length;$("cityLabel").textContent=state.city||"全部城市";
+  if(!state.stores.length){list.appendChild(el("div","placeholder","暂无匹配的门店，请换个关键词。"));empty("暂无相关门店","调整城市或搜索词再试一次。");return}
+  state.stores.forEach(function(store){
+    var b=el("button","store-row"+(state.selected===store.id?" selected":""));b.type="button";b.setAttribute("aria-pressed",state.selected===store.id?"true":"false");
+    b.appendChild(el("span","store-icon",shopIcon(store.name)));
+    var text=el("span","store-txt");text.appendChild(el("strong","",store.name));
+    text.appendChild(el("small","",store.district+" · "+store.product_count+" 款套餐"));
+    b.appendChild(text);b.appendChild(el("span","row-chevron","›"));
+    b.addEventListener("click",function(){selectStore(store.id)});list.appendChild(b);
+  });
+}
+function quoteCard(q,highlight){
+  var card=el("article","quote"+(highlight?" best":""));
+  var head=el("div","quote-top");head.appendChild(el("strong","",platforms[q.platform]||q.platform));
+  var label=q.source_type==="demo"?"演示":q.source_type==="manual"?"人工录入":"授权接口";
+  var kind=q.source_type==="manual"?" manual":q.source_type==="authorized_api"?" api":"";
+  head.appendChild(el("span","quote-tag"+kind,label));card.appendChild(head);
+  var money=el("div","price");money.appendChild(el("small","","¥ "));money.appendChild(document.createTextNode(price(q.payable_cents)));card.appendChild(money);
+  card.appendChild(el("div","breakdown","标价 ¥"+price(q.list_price_cents)+" − 优惠 ¥"+price(q.discount_cents)+(q.fee_cents?" + 费用 ¥"+price(q.fee_cents):"")));
+  card.appendChild(el("div","quote-note",q.note||"优惠以原平台为准"));
+  var time=new Date(q.captured_at);card.appendChild(el("div","quote-time",isNaN(time.getTime())?"记录时间未知":"记录于 "+time.toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})));
+  var url=safeLink(q.source_url,q.platform);
+  if(url){var a=el("a","","查看平台原始信息 ↗");a.href=url;a.target="_blank";a.rel="noopener noreferrer nofollow";card.appendChild(a)}
+  else card.appendChild(el("div","no-url","暂无可核实的商品链接"));
+  return card;
+}
+function groupView(g,index){
+  var section=el("section","product");
+  var title=el("div","product-heading");title.appendChild(el("h4","",g.product.name));title.appendChild(el("small","","套餐 "+String(index+1).padStart(2,"0")));section.appendChild(title);
+  section.appendChild(el("p","details-line","套餐内容："+g.product.details));
+  section.appendChild(el("p","terms-line","使用条件："+g.product.usage_terms));
+  var grid=el("div","quote-grid");
+  g.quotes.forEach(function(q){
+    grid.appendChild(quoteCard(q,g.real_comparison_ready&&q.source_type!=="demo"&&q.payable_cents===g.lowest_real_cents));
+  });
+  if(!g.quotes.length)grid.appendChild(el("p","placeholder","暂无报价"));
+  section.appendChild(grid);
+  var summary=el("div","summary");
+  if(g.real_comparison_ready){
+    summary.appendChild(el("b","","已录入报价差额 ¥"+price(g.possible_saving_cents)+"。"));
+    summary.appendChild(document.createTextNode(" 人工数据尚未独立核实；下单价格以原平台为准。"));
+  }else{
+    summary.textContent=g.contains_demo?"ⓘ 当前包含模拟价格，仅用于展示，不能推断真实省钱金额。":"ⓘ 尚未取得至少两个平台的非演示报价，暂不判断哪家更便宜。";
+  }
+  section.appendChild(summary);return section;
+}
+function paintComparison(payload){
+  var target=$("details");wipe(target);
+  var header=el("div","store-header"),left=el("div");
+  left.appendChild(el("small","","⌖ "+payload.store.city+" · "+payload.store.district));
+  left.appendChild(el("h3","",payload.store.name));left.appendChild(el("p","",payload.store.address));
+  header.appendChild(left);header.appendChild(el("span","outline","同款套餐比价"));target.appendChild(header);
+  if(!payload.groups.length)target.appendChild(el("div","placeholder","暂无可比套餐"));
+  payload.groups.forEach(function(group,index){target.appendChild(groupView(group,index))});
+}
+function selectStore(id){
+  state.selected=id;paintStores();var seq=++state.requestId;
+  empty("正在加载套餐","展示各平台报价详情…");
+  get("/api/stores/"+id+"/comparison").then(function(payload){if(state.requestId===seq)paintComparison(payload)})
+   .catch(function(){if(state.requestId===seq)empty("套餐加载失败","请检查后端服务并重试。")});
+}
+function search(){
+  state.city=$("citySelect").value;state.q=$("keyword").value.trim();var seq=++state.requestId;
+  $("storeList").textContent="正在查找门店…";
+  get("/api/stores?city="+encodeURIComponent(state.city)+"&q="+encodeURIComponent(state.q)).then(function(data){
+    if(state.requestId!==seq)return;state.stores=data.stores||[];state.selected=null;
+    if(state.stores.length)selectStore(state.stores[0].id);else paintStores();
+  }).catch(function(){if(state.requestId!==seq)return;state.stores=[];paintStores();empty("连接失败","确认本地 API 已启动后重试。")});
+}
+document.addEventListener("DOMContentLoaded",function(){
+  $("searchForm").addEventListener("submit",function(e){e.preventDefault();search()});
+  $("citySelect").addEventListener("change",search);
+  document.querySelectorAll("[data-search]").forEach(function(b){b.addEventListener("click",function(){$("keyword").value=b.dataset.search||"";search()})});
+  get("/api/meta").then(function(meta){
+    (meta.cities||[]).forEach(function(city){var option=el("option","",city);option.value=city;$("citySelect").appendChild(option)});
+    if(!meta.demo_seed_enabled){
+      $("notice").querySelector("strong").textContent="公开预览 · 报价尚未独立核实";
+      $("notice").querySelector("p").textContent="人工录入不代表实时价格，实际购买请前往原平台确认。";
+      $("notice").querySelector("code").textContent="PREVIEW";
+    }
+    search();
+  }).catch(function(){empty("无法连接 API","请确认本地服务已启动。");$("storeList").textContent="API 不可用"});
+});
+})();
+</script>
+</body>
+</html>
