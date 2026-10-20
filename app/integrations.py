@@ -120,6 +120,29 @@ def _keys() -> dict[str, str]:
             and isinstance(val, str) and len(val.encode()) >= 32}
 
 
+def _scopes() -> dict[str, dict[str, set]]:
+    """Explicit per-partner grants: every store and platform must be allowlisted."""
+    try:
+        data = json.loads(os.environ.get("TBB_PARTNER_SCOPES_JSON", "{}"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    result = {}
+    for partner_id, limits in data.items():
+        if not isinstance(partner_id, str) or not isinstance(limits, dict):
+            continue
+        store_ids = limits.get("store_ids")
+        platforms = limits.get("platforms")
+        if (not isinstance(store_ids, list) or not store_ids or
+            not isinstance(platforms, list) or not platforms or
+            any(type(v) is not int or v <= 0 for v in store_ids) or
+            any(type(p) is not str or p not in PLATFORM_DOMAINS for p in platforms)):
+            continue
+        result[partner_id] = {"stores": set(store_ids), "platforms": set(platforms)}
+    return result
+
+
 def _verify_request(partner_id: str | None, timestamp: str | None,
                     signature: str | None, body: bytes) -> str:
     keys = _keys()
@@ -150,7 +173,7 @@ def attach_feed_routes(app: FastAPI, db_path: str) -> None:
         # Do not suggest official APIs are configured, even when a partner feed key exists.
         return {
             "official_platform_apis": {name: "not_connected" for name in PLATFORM_DOMAINS},
-            "signed_partner_feed": "configured" if _keys() else "disabled",
+            "signed_partner_feed": "configured" if set(_keys()) & set(_scopes()) else "disabled",
             "note": "签名只能证明合作方提交来源，不能证明价格是平台官方实时价。",
         }
 
@@ -172,14 +195,17 @@ def attach_feed_routes(app: FastAPI, db_path: str) -> None:
             quote = QuoteFeed.model_validate_json(body)
         except ValidationError:
             raise HTTPException(422, "报价数据验证未通过")
+        scope = _scopes().get(partner_id)
+        if not scope or quote.store_id not in scope["stores"] or quote.platform not in scope["platforms"]:
+            raise HTTPException(403, "合作方没有该门店或平台的数据上报权限")
         with store.connect(db_path) as db:
             row = db.execute(
                 """SELECT p.id AS product_id, p.name, p.details, p.usage_terms,
-                          s.id AS store_id, s.address
+                          s.id AS store_id, s.address, s.is_demo
                    FROM products p JOIN stores s ON s.id=p.store_id WHERE p.id=?""",
                 (quote.product_id,),
             ).fetchone()
-            if (row is None or row["store_id"] != quote.store_id or
+            if (row is None or row["is_demo"] or row["store_id"] != quote.store_id or
                 any(normalized(a) != normalized(b) for a, b in [
                     (row["name"], quote.product_name),
                     (row["details"], quote.details),
