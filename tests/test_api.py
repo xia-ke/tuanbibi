@@ -45,9 +45,10 @@ def test_admin_token_and_manual_quote(tmp_path, monkeypatch):
         })
         assert a.status_code == 201 and b.status_code == 201
         groups = client.get("/api/stores/" + str(s.json()["id"]) + "/comparison").json()["groups"]
-        assert groups[0]["real_comparison_ready"]
-        assert groups[0]["possible_saving_cents"] == 200
-        assert groups[0]["lowest_real_cents"] == 1500
+        assert not groups[0]["real_comparison_ready"]
+        assert groups[0]["possible_saving_cents"] is None
+        assert groups[0]["lowest_real_cents"] is None
+        assert all(q["comparison_reason"] for q in groups[0]["quotes"])
 
 
 def test_disable_admin_when_not_configured(tmp_path, monkeypatch):

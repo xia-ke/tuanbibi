@@ -104,7 +104,7 @@ footer .wrap{flex-direction:column;align-items:start;justify-content:center;padd
 <div class="layout"><aside class="panel"><div class="sidebar-title"><div><h3>门店列表 <span id="storeCount">—</span></h3><p id="cityLabel">全部城市</p></div><span class="pin">⌖</span></div><div id="storeList" aria-live="polite"><div class="placeholder">门店载入中…</div></div></aside><div class="panel" id="details" aria-live="polite"><div class="empty"><span class="empty-icon">↗</span><h3>比价从一家店开始</h3><p>从左侧选择门店，查看同款套餐报价。</p></div></div></div>
 <p class="explain">◎ 同款判断依赖相同门店、套餐内容和使用条件。不同套餐不会被硬凑成“最低价”。</p>
 </section></main>
-<footer><div class="wrap"><span><strong>团比比</strong> · 同一家店，多平台比。</span><span>Open source · MVP 0.1.0 · <a href="https://github.com/xia-ke/tuanbibi" target="_blank" rel="noopener noreferrer">项目源码 ↗</a></span></div></footer>
+<footer><div class="wrap"><span><strong>团比比</strong> · 同一家店，多平台比。</span><span>Open source · MVP 0.2.0 · <a href="https://github.com/xia-ke/tuanbibi" target="_blank" rel="noopener noreferrer">项目源码 ↗</a></span></div></footer>
 <script>
 (function(){
 "use strict";
@@ -143,12 +143,12 @@ function paintStores(){
 function quoteCard(q,highlight){
   var card=el("article","quote"+(highlight?" best":""));
   var head=el("div","quote-top");head.appendChild(el("strong","",platforms[q.platform]||q.platform));
-  var label=q.source_type==="demo"?"演示":q.source_type==="manual"?"人工录入":"授权接口";
-  var kind=q.source_type==="manual"?" manual":q.source_type==="authorized_api"?" api":"";
+  var label=q.source_type==="demo"?"演示":q.source_type==="manual"?"人工录入":q.source_type==="partner_feed"?"合作方上报":"授权接口";
+  var kind=q.source_type==="manual"?" manual":(q.source_type==="authorized_api"||q.source_type==="partner_feed")?" api":"";
   head.appendChild(el("span","quote-tag"+kind,label));card.appendChild(head);
   var money=el("div","price");money.appendChild(el("small","","¥ "));money.appendChild(document.createTextNode(price(q.payable_cents)));card.appendChild(money);
   card.appendChild(el("div","breakdown","标价 ¥"+price(q.list_price_cents)+" − 优惠 ¥"+price(q.discount_cents)+(q.fee_cents?" + 费用 ¥"+price(q.fee_cents):"")));
-  card.appendChild(el("div","quote-note",q.note||"优惠以原平台为准"));
+  card.appendChild(el("div","quote-note",q.note||"优惠以原平台为准"));if(q.comparison_reason)card.appendChild(el("div","quote-note","ⓘ "+q.comparison_reason));
   var time=new Date(q.captured_at);card.appendChild(el("div","quote-time",isNaN(time.getTime())?"记录时间未知":"记录于 "+time.toLocaleString("zh-CN",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})));
   var url=safeLink(q.source_url,q.platform);
   if(url){var a=el("a","","查看平台原始信息 ↗");a.href=url;a.target="_blank";a.rel="noopener noreferrer nofollow";card.appendChild(a)}
@@ -168,10 +168,10 @@ function groupView(g,index){
   section.appendChild(grid);
   var summary=el("div","summary");
   if(g.real_comparison_ready){
-    summary.appendChild(el("b","","已录入报价差额 ¥"+price(g.possible_saving_cents)+"。"));
-    summary.appendChild(document.createTextNode(" 人工数据尚未独立核实；下单价格以原平台为准。"));
+    summary.appendChild(el("b","","合作方上报报价差额 ¥"+price(g.possible_saving_cents)+"。"));
+    summary.appendChild(document.createTextNode(" 非平台官方实时价；需在原平台核验购买资格、优惠条件与最终实付。"));
   }else{
-    summary.textContent=g.contains_demo?"ⓘ 当前包含模拟价格，仅用于展示，不能推断真实省钱金额。":"ⓘ 尚未取得至少两个平台的非演示报价，暂不判断哪家更便宜。";
+    summary.textContent=g.contains_demo?"ⓘ 当前包含模拟价格，仅用于展示，不能推断真实省钱金额。":"ⓘ 尚未取得两个平台满足时效与购买条件的签名合作方报价，暂不判断哪家更便宜。";
   }
   section.appendChild(summary);return section;
 }
