@@ -1,4 +1,5 @@
 """SQLite storage and explicitly synthetic demo catalog."""
+from contextlib import contextmanager
 from pathlib import Path
 import sqlite3
 
@@ -62,11 +63,19 @@ DEMO = [
 ]
 
 
-def connect(db_path: str) -> sqlite3.Connection:
+@contextmanager
+def connect(db_path: str):
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
-    return connection
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def init_db(db_path: str, seed_demo: bool = True) -> None:
