@@ -55,6 +55,21 @@ CREATE TABLE IF NOT EXISTS partner_quotes(
 );
 CREATE INDEX IF NOT EXISTS idx_partner_quotes_product ON partner_quotes(product_id,platform);
 
+CREATE TABLE IF NOT EXISTS meituan_public_observations(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_url TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  brand_name TEXT,
+  description TEXT,
+  display_price_cents INTEGER NOT NULL CHECK(display_price_cents >= 0),
+  price_evidence TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  source_type TEXT NOT NULL CHECK(source_type='public_page'),
+  final_price_verified INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_meituan_public_url ON meituan_public_observations(source_url,captured_at);
+
+
 """
 
 # Illustrative and fictitious stores, products, and prices; never real market quotations.
@@ -200,3 +215,25 @@ def latest_quotes(db: sqlite3.Connection, product_id: int) -> list[dict]:
         entry["captured_at"] = entry["quoted_at"]
         selected[entry["platform"]] = entry
     return [selected[name] for name in sorted(selected)]
+
+
+
+def save_meituan_public_observation(db: sqlite3.Connection, item: dict) -> int:
+    """Append an evidence snapshot; never merge into verified partner quotes."""
+    cursor = db.execute(
+        """INSERT INTO meituan_public_observations
+        (source_url,product_name,brand_name,description,display_price_cents,
+         price_evidence,captured_at,source_type,final_price_verified)
+        VALUES (?,?,?,?,?,?,?,?,0)""",
+        (item["source_url"], item["product_name"], item.get("brand_name"),
+         item.get("description"), item["display_price_cents"],
+         item["price_evidence"], item["captured_at"], "public_page"),
+    )
+    return cursor.lastrowid
+
+
+def list_meituan_public_observations(db: sqlite3.Connection, limit: int = 50) -> list[dict]:
+    rows = db.execute(
+        """SELECT * FROM meituan_public_observations
+        ORDER BY id DESC LIMIT ?""", (limit,))
+    return [dict(row) for row in rows]

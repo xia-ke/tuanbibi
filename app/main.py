@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.pricing import comparison_for, payable_cents, utc_now
 from app.integrations import PLATFORM_DOMAINS, attach_feed_routes, platform_url_is_valid
+from app.meituan_routes import attach_meituan_routes
 from app import store as data
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,7 +66,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
         data.init_db(path, seed_demo=demo)
         yield
 
-    app = FastAPI(title="团比比 API", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title="团比比 API", version="0.3.0", lifespan=lifespan)
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "web")), name="static")
 
     def require_admin(x_admin_token: str | None = Header(default=None)):
@@ -81,7 +82,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "version": "0.2.0"}
+        return {"ok": True, "version": "0.3.0"}
 
     @app.get("/api/meta")
     def meta():
@@ -153,6 +154,7 @@ def create_app(db_path: str | None = None, seed_demo: bool | None = None) -> Fas
             return {"id": cursor.lastrowid, "source_type": "manual"}
 
     attach_feed_routes(app, path)
+    attach_meituan_routes(app, path, require_admin)
     return app
 
 
